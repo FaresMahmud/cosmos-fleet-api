@@ -1,7 +1,8 @@
 # Cosmos Fleet API
 
-Projeto em Java com Spring Boot para gerenciar uma frota de naves espaciais, simular viagens, controlar combustivel e visualizar as naves por uma interface web.
-## 🎬 Demo
+Projeto em Java com Spring Boot para gerenciar uma frota de naves espaciais, simular viagens, controlar combustivel e visualizar as naves por uma interface web com modelos 3D.
+
+## Demo
 
 https://youtu.be/vyP8EKZkhj4
 
@@ -18,12 +19,15 @@ Tambem foram criadas excecoes especificas para tratar combustivel invalido e com
 
 O projeto conta com rotas REST para listar, buscar, criar, remover, abastecer e consultar o historico de viagens das naves.
 
+A interface web tambem possui uma visualizacao 3D das naves usando Three.js.
+
 ## Tecnologias
 
 - Java 17
 - Spring Boot
 - Maven
 - JUnit
+- Three.js
 
 ## Como executar
 
@@ -44,6 +48,8 @@ Depois de iniciar a aplicacao, acesse:
 ```text
 http://localhost:8080
 ```
+
+Na interface e possivel visualizar a frota, criar novas naves, abastecer, realizar viagens, remover naves e abrir a visualizacao 3D de cada modelo.
 
 ## Rotas principais
 
@@ -97,4 +103,4 @@ src/main/java/com/cosmos/fleet
 
 ## Status
 
-Projeto em desenvolvimento, com classes de dominio, camada de servico, rotas REST e interface web inicial para controle da frota.
+Projeto em desenvolvimento, com classes de dominio, camada de servico, rotas REST, historico de viagens e interface web com visualizacao 3D para controle da frota.

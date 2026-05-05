@@ -1,6 +1,9 @@
 # Cosmos Fleet API
 
 Projeto em Java com Spring Boot para gerenciar uma frota de naves espaciais, simular viagens, controlar combustivel e visualizar as naves por uma interface web.
+## 🎬 Demo
+
+https://youtu.be/vyP8EKZkhj4
 
 ## Sobre o projeto
 

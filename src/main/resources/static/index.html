@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOS FLEET — Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+          --void: #03040d;
+          --deep: #070916;
+          --nebula: #0d1230;
+          --glow-blue: #4d9fff;
+          --glow-cyan: #00e5ff;
+          --glow-purple: #9d4dff;
+          --star: #c8d8ff;
+          --text: #ccd6f6;
+          --muted: #4a5580;
+          --danger: #ff4466;
+          --warn: #ffaa00;
+          --success: #00ff99;
+          --card-bg: rgba(13, 18, 48, 0.7);
+          --border: rgba(77, 159, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+          height: 100%;
+          overflow-x: hidden;
+          background: var(--void);
+          color: var(--text);
+          font-family: 'Rajdhani', sans-serif;
+          cursor: none;
+        }
+
+        /* ── CURSOR CUSTOMIZADO ── */
+        #cursor {
+          position: fixed;
+          width: 12px; height: 12px;
+          background: var(--glow-cyan);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 9999;
+          transform: translate(-50%, -50%);
+          transition: transform 0.1s, width 0.2s, height 0.2s, opacity 0.2s;
+          box-shadow: 0 0 12px var(--glow-cyan), 0 0 24px rgba(0,229,255,0.4);
+        }
+
+        #cursor-ring {
+          position: fixed;
+          width: 36px; height: 36px;
+          border: 1px solid rgba(0,229,255,0.4);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 9998;
+          transform: translate(-50%, -50%);
+          transition: transform 0.15s ease, width 0.3s, height 0.3s;
+        }
+
+        /* ── CANVAS DE ESTRELAS ── */
+        #starfield {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          z-index: 0;
+        }
+
+        /* ── NEBULOSA DE FUNDO ── */
+        .nebula-bg {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          z-index: 0;
+          background:
+            radial-gradient(ellipse 80% 60% at 20% 30%, rgba(77,79,255,0.07) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 80% at 80% 70%, rgba(157,77,255,0.07) 0%, transparent 60%),
+            radial-gradient(ellipse 40% 40% at 50% 10%, rgba(0,229,255,0.05) 0%, transparent 50%);
+          pointer-events: none;
+        }
+
+        /* ── LAYOUT ── */
+        #app {
+          position: relative;
+          z-index: 1;
+          min-height: 100vh;
+          padding: 0 40px 60px;
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+
+        /* ── HEADER ── */
+        header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 32px 0 48px;
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 48px;
+        }
+
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .logo-icon {
+          width: 48px; height: 48px;
+          position: relative;
+          display: flex; align-items: center; justify-content: center;
+        }
+
+        .logo-icon::before {
+          content: '';
+          position: absolute;
+          width: 100%; height: 100%;
+          border: 2px solid var(--glow-cyan);
+          border-radius: 50%;
+          animation: spin 8s linear infinite;
+        }
+
+        .logo-icon::after {
+          content: '';
+          position: absolute;
+          width: 70%; height: 70%;
+          border: 1px solid var(--glow-purple);
+          border-radius: 50%;
+          animation: spin 5s linear infinite reverse;
+        }
+
+        .logo-dot {
+          width: 8px; height: 8px;
+          background: var(--glow-cyan);
+          border-radius: 50%;
+          box-shadow: 0 0 12px var(--glow-cyan);
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .logo-text h1 {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 1.5rem;
+          font-weight: 900;
+          letter-spacing: 6px;
+          color: #fff;
+          text-shadow: 0 0 20px var(--glow-cyan);
+        }
+
+        .logo-text p {
+          font-size: 0.7rem;
+          letter-spacing: 4px;
+          color: var(--muted);
+          text-transform: uppercase;
+          margin-top: 2px;
+        }
+
+        .header-status {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+        }
+
+        .status-pill {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          font-size: 0.75rem;
+          letter-spacing: 2px;
+          color: var(--muted);
+          backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+          width: 6px; height: 6px;
+          background: var(--success);
+          border-radius: 50%;
+          box-shadow: 0 0 8px var(--success);
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .btn-refresh {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 20px;
+          background: transparent;
+          border: 1px solid var(--glow-blue);
+          border-radius: 8px;
+          color: var(--glow-blue);
+          font-family: 'Rajdhani', sans-serif;
+          font-size: 0.85rem;
+          font-weight: 600;
+          letter-spacing: 2px;
+          cursor: none;
+          transition: all 0.3s;
+          text-transform: uppercase;
+        }
+
+        .btn-refresh:hover {
+          background: rgba(77,159,255,0.1);
+          box-shadow: 0 0 20px rgba(77,159,255,0.2);
+        }
+
+        .btn-refresh .icon { transition: transform 0.5s; }
+        .btn-refresh:hover .icon { transform: rotate(180deg); }
+
+        /* ── STATS BAR ── */
+        .stats-bar {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          margin-bottom: 48px;
+        }
+
+        .stat-card {
+          background: var(--card-bg);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 20px 24px;
+          backdrop-filter: blur(20px);
+          position: relative;
+          overflow: hidden;
+          transition: border-color 0.3s;
+        }
+
+        .stat-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, var(--glow-cyan), transparent);
+          opacity: 0.5;
+        }
+
+        .stat-label {
+          font-size: 0.65rem;
+          letter-spacing: 3px;
+          color: var(--muted);
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+
+        .stat-value {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        .stat-value span {
+          font-size: 0.9rem;
+          color: var(--muted);
+          font-weight: 400;
+        }
+
+        /* ── GRID DE NAVES ── */
+        .frota-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+          gap: 24px;
+        }
+
+        .nave-card {
+          background: var(--card-bg);
+          border: 1px solid var(--border);
+          border-radius: 20px;
+          padding: 28px;
+          backdrop-filter: blur(20px);
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+          animation: fadeInUp 0.5s ease both;
+        }
+
+        .nave-card:nth-child(2) { animation-delay: 0.1s; }
+        .nave-card:nth-child(3) { animation-delay: 0.2s; }
+
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nave-card:hover {
+          transform: translateY(-6px);
+          border-color: rgba(77,159,255,0.3);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(77,159,255,0.08);
+        }
+
+        .nave-card::before {
+          content: '';
+          position: absolute;
+          top: -1px; left: 20%; right: 20%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, var(--glow-cyan), transparent);
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .nave-card:hover::before { opacity: 1; }
+
+        .card-glow {
+          position: absolute;
+          top: -60px; right: -60px;
+          width: 180px; height: 180px;
+          border-radius: 50%;
+          opacity: 0.04;
+          pointer-events: none;
+          transition: opacity 0.3s;
+        }
+
+        .nave-card:hover .card-glow { opacity: 0.08; }
+
+        .glow-blue { background: var(--glow-blue); }
+        .glow-purple { background: var(--glow-purple); }
+        .glow-cyan { background: var(--glow-cyan); }
+
+        /* ── CARD HEADER ── */
+        .card-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 24px;
+        }
+
+        .card-identity {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .nave-icon {
+          width: 52px; height: 52px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          font-size: 1.6rem;
+          position: relative;
+        }
+
+        .nave-icon::after {
+          content: '';
+          position: absolute;
+          inset: -1px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, rgba(77,159,255,0.2), transparent);
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .nave-card:hover .nave-icon::after { opacity: 1; }
+
+        .nave-name {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: 1px;
+          margin-bottom: 4px;
+        }
+
+        .nave-tipo {
+          font-size: 0.7rem;
+          letter-spacing: 3px;
+          color: var(--muted);
+          text-transform: uppercase;
+        }
+
+        .tipo-badge {
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-size: 0.65rem;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          font-weight: 600;
+          border: 1px solid;
+        }
+
+        .badge-cargueiro { color: #ffaa00; border-color: rgba(255,170,0,0.3); background: rgba(255,170,0,0.05); }
+        .badge-combate   { color: #ff6688; border-color: rgba(255,100,136,0.3); background: rgba(255,100,136,0.05); }
+        .badge-exploracao{ color: #00e5ff; border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.05); }
+
+        /* ── COMBUSTÍVEL ── */
+        .fuel-section { margin-bottom: 22px; }
+
+        .fuel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+
+        .fuel-label {
+          font-size: 0.7rem;
+          letter-spacing: 2px;
+          color: var(--muted);
+          text-transform: uppercase;
+        }
+
+        .fuel-value {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.85rem;
+          color: var(--text);
+        }
+
+        .fuel-pct {
+          font-size: 0.75rem;
+          color: var(--muted);
+          margin-left: 6px;
+        }
+
+        .fuel-track {
+          height: 6px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 999px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .fuel-bar {
+          height: 100%;
+          border-radius: 999px;
+          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+        }
+
+        .fuel-bar.alto {
+          background: linear-gradient(90deg, #0066ff, #00e5ff);
+          box-shadow: 0 0 10px rgba(0,229,255,0.5);
+        }
+
+        .fuel-bar.medio {
+          background: linear-gradient(90deg, #cc6600, #ffaa00);
+          box-shadow: 0 0 10px rgba(255,170,0,0.5);
+        }
+
+        .fuel-bar.baixo {
+          background: linear-gradient(90deg, #990022, #ff4466);
+          box-shadow: 0 0 10px rgba(255,68,102,0.5);
+          animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+
+        .fuel-bar::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+          background-size: 200% 100%;
+          animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+          height: 1px;
+          background: var(--border);
+          margin: 20px 0;
+        }
+
+        /* ── AÇÕES ── */
+        .acoes { display: flex; flex-direction: column; gap: 12px; }
+
+        .acao-row {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
+        .acao-input {
+          flex: 1;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: var(--text);
+          font-family: 'Rajdhani', sans-serif;
+          font-size: 0.9rem;
+          letter-spacing: 1px;
+          outline: none;
+          transition: border-color 0.2s, background 0.2s;
+          cursor: none;
+        }
+
+        .acao-input::placeholder { color: var(--muted); }
+
+        .acao-input:focus {
+          border-color: rgba(77,159,255,0.4);
+          background: rgba(77,159,255,0.04);
+        }
+
+        .acao-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 16px;
+          border-radius: 10px;
+          border: 1px solid;
+          font-family: 'Rajdhani', sans-serif;
+          font-size: 0.8rem;
+          font-weight: 600;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          cursor: none;
+          transition: all 0.25s;
+          white-space: nowrap;
+          background: transparent;
+        }
+
+        .btn-viajar {
+          color: var(--glow-blue);
+          border-color: rgba(77,159,255,0.3);
+        }
+
+        .btn-viajar:hover {
+          background: rgba(77,159,255,0.1);
+          box-shadow: 0 0 20px rgba(77,159,255,0.2);
+          border-color: var(--glow-blue);
+        }
+
+        .btn-abastecer {
+          color: var(--success);
+          border-color: rgba(0,255,153,0.3);
+        }
+
+        .btn-abastecer:hover {
+          background: rgba(0,255,153,0.08);
+          box-shadow: 0 0 20px rgba(0,255,153,0.15);
+          border-color: var(--success);
+        }
+
+        .acao-btn:active { transform: scale(0.96); }
+
+        /* ── TOAST ── */
+        .toast-container {
+          position: fixed;
+          bottom: 32px;
+          right: 32px;
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          pointer-events: none;
+        }
+
+        .toast {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 20px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          letter-spacing: 0.5px;
+          backdrop-filter: blur(20px);
+          border: 1px solid;
+          animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s both;
+          max-width: 360px;
+        }
+
+        .toast.sucesso {
+          background: rgba(0,255,153,0.08);
+          border-color: rgba(0,255,153,0.3);
+          color: var(--success);
+        }
+
+        .toast.erro {
+          background: rgba(255,68,102,0.08);
+          border-color: rgba(255,68,102,0.3);
+          color: var(--danger);
+        }
+
+        @keyframes toastIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+          from { opacity: 1; transform: translateX(0); }
+          to { opacity: 0; transform: translateX(20px); }
+        }
+
+        /* ── LOADING ── */
+        .loading {
+          text-align: center;
+          padding: 80px 0;
+          color: var(--muted);
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.8rem;
+          letter-spacing: 4px;
+        }
+
+        .loading-dots::after {
+          content: '';
+          animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+          0%  { content: ''; }
+          25% { content: '.'; }
+          50% { content: '..'; }
+          75% { content: '...'; }
+        }
+
+        /* ── SCANLINE EFFECT ── */
+        body::after {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,0,0,0.03) 2px,
+            rgba(0,0,0,0.03) 4px
+          );
+          pointer-events: none;
+          z-index: 9997;
+        }
+
+        /* ── SCROLL BAR ── */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--void); }
+        ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+
+        /* ── SECTION TITLE ── */
+        .section-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+
+        .section-title {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.75rem;
+          letter-spacing: 4px;
+          color: var(--muted);
+          text-transform: uppercase;
+        }
+
+        .section-line {
+          flex: 1;
+          height: 1px;
+          background: var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Canvas estrelas -->
+<canvas id="starfield"></canvas>
+<div class="nebula-bg"></div>
+
+<!-- Cursor customizado -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toasts"></div>
+
+<div id="app">
+    <header>
+        <div class="logo">
+            <div class="logo-icon">
+                <div class="logo-dot"></div>
+            </div>
+            <div class="logo-text">
+                <h1>COSMOS</h1>
+                <p>Fleet Command Center</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <div class="status-pill">
+                <div class="status-dot"></div>
+                SISTEMA ONLINE
+            </div>
+            <button class="btn-refresh" onclick="carregarFrota()">
+                <span class="icon">↻</span>
+                <span>Atualizar</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="stats-bar" id="stats-bar">
+        <div class="stat-card">
+            <div class="stat-label">Naves na Frota</div>
+            <div class="stat-value" id="stat-naves">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Combustível Médio</div>
+            <div class="stat-value" id="stat-combustivel">—<span>%</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Naves em Alerta</div>
+            <div class="stat-value" id="stat-alerta" style="color: var(--danger)">—</div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <span class="section-title">Frota Ativa</span>
+        <div class="section-line"></div>
+    </div>
+
+    <div class="frota-grid" id="frota">
+        <div class="loading">
+            <div class="loading-dots">CARREGANDO FROTA</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ── CURSOR ── */
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursor-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top  = my + 'px';
+    });
+
+    function animateRing() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    document.querySelectorAll('button, input').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+        ring.style.width = '50px'; ring.style.height = '50px';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+        ring.style.width = '36px'; ring.style.height = '36px';
+      });
+    });
+
+    /* ── STARFIELD ── */
+    const canvas = document.getElementById('starfield');
+    const ctx    = canvas.getContext('2d');
+    let stars    = [];
+    const NUM_STARS = 280;
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function initStars() {
+      stars = Array.from({ length: NUM_STARS }, () => ({
+        x:     Math.random() * canvas.width,
+        y:     Math.random() * canvas.height,
+        r:     Math.random() * 1.2 + 0.2,
+        speed: Math.random() * 0.4 + 0.05,
+        opacity: Math.random() * 0.7 + 0.1,
+        twinkle: Math.random() * Math.PI * 2,
+      }));
+    }
+
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.y += s.speed;
+        s.twinkle += 0.02;
+        if (s.y > canvas.height) {
+          s.y = 0;
+          s.x = Math.random() * canvas.width;
+        }
+        const op = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200, 216, 255, ${op})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(drawStars);
+    }
+
+    window.addEventListener('resize', () => { resize(); initStars(); });
+    resize(); initStars(); drawStars();
+
+    /* ── TIPOS ── */
+    function detectarTipo(nave) {
+      if ('pesoCargaAtual' in nave)           return 'cargueiro';
+      if ('numeroArmas' in nave)              return 'combate';
+      if ('possuiSensoresAvancados' in nave)  return 'exploracao';
+      return 'generica';
+    }
+
+    const tipoInfo = {
+      cargueiro:  { icon: '📦', label: 'Cargueiro',       badge: 'badge-cargueiro', glow: 'glow-blue' },
+      combate:    { icon: '⚔️',  label: 'Nave de Combate', badge: 'badge-combate',   glow: 'glow-purple' },
+      exploracao: { icon: '🔭', label: 'Exploração',       badge: 'badge-exploracao',glow: 'glow-cyan' },
+      generica:   { icon: '🚀', label: 'Nave Espacial',    badge: 'badge-exploracao',glow: 'glow-blue' },
+    };
+
+    /* ── STATS ── */
+    function atualizarStats(naves) {
+      document.getElementById('stat-naves').textContent = naves.length;
+      const media = naves.reduce((acc, n) => acc + (n.combustivelAtual / n.combustivelMaximo * 100), 0) / naves.length;
+      document.getElementById('stat-combustivel').innerHTML = media.toFixed(0) + '<span>%</span>';
+      const alertas = naves.filter(n => (n.combustivelAtual / n.combustivelMaximo) < 0.25).length;
+      document.getElementById('stat-alerta').textContent = alertas;
+    }
+
+    /* ── RENDER ── */
+    function nivelCombustivel(atual, max) {
+      const p = atual / max;
+      if (p > 0.6) return 'alto';
+      if (p > 0.25) return 'medio';
+      return 'baixo';
+    }
+
+    function renderCard(nave) {
+      const tipo  = detectarTipo(nave);
+      const info  = tipoInfo[tipo];
+      const pct   = (nave.combustivelAtual / nave.combustivelMaximo * 100).toFixed(1);
+      const nivel = nivelCombustivel(nave.combustivelAtual, nave.combustivelMaximo);
+      const idEnc = encodeURIComponent(nave.identificador);
+      const safeId = nave.identificador.replace(/\s+/g, '_');
+
+      return `
+        <div class="nave-card">
+          <div class="card-glow ${info.glow}"></div>
+          <div class="card-top">
+            <div class="card-identity">
+              <div class="nave-icon">${info.icon}</div>
+              <div>
+                <div class="nave-name">${nave.identificador}</div>
+                <div class="nave-tipo">${info.label}</div>
+              </div>
+            </div>
+            <div class="tipo-badge ${info.badge}">${info.label}</div>
+          </div>
+
+          <div class="fuel-section">
+            <div class="fuel-header">
+              <span class="fuel-label">⛽ Combustível</span>
+              <span class="fuel-value">
+                ${nave.combustivelAtual.toFixed(0)}
+                <span class="fuel-pct">/ ${nave.combustivelMaximo} (${pct}%)</span>
+              </span>
+            </div>
+            <div class="fuel-track">
+              <div class="fuel-bar ${nivel}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="acoes">
+            <div class="acao-row">
+              <input class="acao-input" type="number" id="dist-${safeId}"
+                placeholder="Distância em anos-luz" min="1">
+              <button class="acao-btn btn-viajar"
+                onclick="viajar('${nave.identificador}', '${safeId}', '${idEnc}')">
+                🚀 Viajar
+              </button>
+            </div>
+            <div class="acao-row">
+              <input class="acao-input" type="number" id="comb-${safeId}"
+                placeholder="Qtd. de combustível" min="1">
+              <button class="acao-btn btn-abastecer"
+                onclick="abastecer('${nave.identificador}', '${safeId}', '${idEnc}')">
+                ⛽ Abastecer
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    /* ── TOAST ── */
+    function toast(msg, tipo) {
+      const el = document.createElement('div');
+      el.className = `toast ${tipo}`;
+      el.innerHTML = `<span>${tipo === 'sucesso' ? '✓' : '✕'}</span> ${msg}`;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(() => el.remove(), 3100);
+    }
+
+    /* ── API ── */
+    async function carregarFrota() {
+      document.getElementById('frota').innerHTML =
+        '<div class="loading"><div class="loading-dots">CARREGANDO FROTA</div></div>';
+      try {
+        const res  = await fetch('/naves');
+        const data = await res.json();
+        atualizarStats(data);
+        document.getElementById('frota').innerHTML = data.map(renderCard).join('');
+        // re-bind cursor hover
+        document.querySelectorAll('button, input').forEach(el => {
+          el.addEventListener('mouseenter', () => {
+            cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+            ring.style.width = '50px'; ring.style.height = '50px';
+          });
+          el.addEventListener('mouseleave', () => {
+            cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+            ring.style.width = '36px'; ring.style.height = '36px';
+          });
+        });
+      } catch(e) {
+        document.getElementById('frota').innerHTML =
+          '<div class="loading">FALHA NA CONEXÃO COM O SERVIDOR</div>';
+      }
+    }
+
+    async function viajar(nome, safeId, idEnc) {
+      const val = document.getElementById('dist-' + safeId).value;
+      if (!val) return toast('Digite uma distância!', 'erro');
+      try {
+        const res = await fetch(`/naves/${idEnc}/viajar?distancia=${val}`, { method: 'POST' });
+        const txt = await res.text();
+        toast(txt, res.ok ? 'sucesso' : 'erro');
+        if (res.ok) carregarFrota();
+      } catch(e) { toast('Erro de conexão!', 'erro'); }
+    }
+
+    async function abastecer(nome, safeId, idEnc) {
+      const val = document.getElementById('comb-' + safeId).value;
+      if (!val) return toast('Digite uma quantidade!', 'erro');
+      try {
+        const res = await fetch(`/naves/${idEnc}/abastecer?quantidade=${val}`, { method: 'PATCH' });
+        const txt = await res.text();
+        toast(txt, res.ok ? 'sucesso' : 'erro');
+        if (res.ok) carregarFrota();
+      } catch(e) { toast('Erro de conexão!', 'erro'); }
+    }
+
+    carregarFrota();
+</script>
+</body>
+</html>

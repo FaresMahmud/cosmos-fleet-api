@@ -6,13 +6,13 @@ public class NaveCargueiro extends NaveEspacial {
     private double capacidadeMaximaCarga;
 
     public NaveCargueiro(String identificador, double combustivelMaximo,
-                         double velocidadeBase, double capacidadeMaximaCarga) {
-        super(identificador, combustivelMaximo, combustivelMaximo, velocidadeBase);
+                         double combustivelAtual, double velocidadeBase,
+                         double capacidadeMaximaCarga) {
+        super(identificador, combustivelMaximo, combustivelAtual, velocidadeBase);
         this.capacidadeMaximaCarga = capacidadeMaximaCarga;
         this.pesoCargaAtual = 0;
     }
 
-    // --- Getters e Setter com validação ---
     public double getPesoCargaAtual() { return pesoCargaAtual; }
     public double getCapacidadeMaximaCarga() { return capacidadeMaximaCarga; }
 
@@ -23,7 +23,6 @@ public class NaveCargueiro extends NaveEspacial {
         this.pesoCargaAtual = peso;
     }
 
-    // --- Fórmula de consumo do cargueiro ---
     @Override
     public double calcularConsumo(double distancia) {
         return (distancia * 0.5) + (pesoCargaAtual * 0.2);

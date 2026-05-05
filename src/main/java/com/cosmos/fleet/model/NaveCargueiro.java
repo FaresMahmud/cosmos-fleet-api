@@ -7,7 +7,7 @@ public class NaveCargueiro extends NaveEspacial {
 
     public NaveCargueiro(String identificador, double combustivelMaximo,
                          double velocidadeBase, double capacidadeMaximaCarga) {
-        super(identificador, combustivelMaximo, velocidadeBase);
+        super(identificador, combustivelMaximo, combustivelMaximo, velocidadeBase);
         this.capacidadeMaximaCarga = capacidadeMaximaCarga;
         this.pesoCargaAtual = 0;
     }

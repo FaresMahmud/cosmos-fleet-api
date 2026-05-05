@@ -7,7 +7,7 @@ public class NaveCombate extends NaveEspacial {
 
     public NaveCombate(String identificador, double combustivelMaximo,
                        double velocidadeBase, int numeroArmas, boolean escudoAtivado) {
-        super(identificador, combustivelMaximo, velocidadeBase);
+        super(identificador, combustivelMaximo, combustivelMaximo, velocidadeBase);
         this.numeroArmas = numeroArmas;
         this.escudoAtivado = escudoAtivado;
     }
